@@ -5,18 +5,18 @@ import pathlib
 from flask import Flask, render_template, request
 # from generate_chroma_db import generate_chroma_db
 
-# Define the required packages
-required_packages = [
-    "pdfplumber"
-]
+# # Define the required packages
+# required_packages = [
+#     "pdfplumber"
+# ]
 
-# Check if packages are already installed
-installed_packages = subprocess.check_output([sys.executable, "-m", "pip", "list"]).decode("utf-8")
-packages_to_install = [package for package in required_packages if package not in installed_packages]
+# # Check if packages are already installed
+# installed_packages = subprocess.check_output([sys.executable, "-m", "pip", "list"]).decode("utf-8")
+# packages_to_install = [package for package in required_packages if package not in installed_packages]
 
-# Install required packages if they are not already installed
-if packages_to_install:
-    subprocess.check_call([sys.executable, "-m", "pip", "install"] + packages_to_install)
+# # Install required packages if they are not already installed
+# if packages_to_install:
+#     subprocess.check_call([sys.executable, "-m", "pip", "install"] + packages_to_install)
 
 
 import pdfplumber
@@ -46,6 +46,7 @@ openai_api_key = os.environ.get("OPENAI_API_KEY")
 # Set the OpenAI API key if it exists
 if openai_api_key:
     openai.api_key = openai_api_key
+    print("openai API key is set")
 else:
     # Handle the case where the API key is not set
     raise ValueError("OpenAI API key is not set.")
@@ -65,7 +66,9 @@ else:
 #                 text += page.extract_text()
 #             yield Document(page_content=text, metadata={"source": str(pdf_file.relative_to(folder))})
 
+
 def get_pdf_docs(folder_path):
+    print("get_pdf_docs function is called")
     folder = pathlib.Path(folder_path)
     print("Iterating through PDF files")
 
@@ -77,12 +80,14 @@ def get_pdf_docs(folder_path):
             text = ""
             for page in pdf.pages:
                 text += page.extract_text()
-            print(f"Extracted text from {pdf_file}:\n{text}")
+
+        print(f"Extracted text from {pdf_file}:\n{text}")
 
         yield Document(page_content=text, metadata={"source": str(pdf_file.relative_to(folder))})
 
 # Use the Python code text splitter from Langchain to create chunks
 def get_source_chunks(repo_path, pdf_folder_path): 
+    print("get_source_chunks function is called")
     source_chunks = []
     print("Creating source chunks")
 
@@ -101,11 +106,13 @@ def get_source_chunks(repo_path, pdf_folder_path):
 # Define function to generate response from user input
 # This will also create the embeddings and store them in ChromaDB if it does not exist already
 def generate_response(input_text):
+    print("generate_response function is called")
 
     # Define the path of the repository and Chroma DB
     # to get the absolute path of the current script file
     REPO_PATH = os.path.abspath(os.path.dirname(__file__))
     CHROMA_DB_PATH = os.path.join(REPO_PATH, "chromaDB")
+    print("after CHROMA_DB_PATH inside generate_response")
 
     vector_db = None
 
@@ -113,24 +120,28 @@ def generate_response(input_text):
 
     # Check if Chroma DB exists
     if not os.path.exists(CHROMA_DB_PATH):
+        print("inside IF inside generate_response")
         # Create a new Chroma DB
         print(f'Creating Chroma DB at {CHROMA_DB_PATH}...')
         source_chunks = get_source_chunks(REPO_PATH, os.path.join(REPO_PATH, "sample_policies"))
+        print("after source_chunks inside generate_response")
         # Creating embeddings using the OpenAIEmbeddings, will incur costs
         vector_db = Chroma.from_documents(source_chunks, OpenAIEmbeddings(), persist_directory=CHROMA_DB_PATH)
         vector_db.persist()
     else:
         # Load an existing Chroma DB
+        print("inside ELSE inside generate_response")
         print(f'Loading Chroma DB from {CHROMA_DB_PATH}...')
         vector_db = Chroma(persist_directory=CHROMA_DB_PATH, embedding_function=OpenAIEmbeddings())
 
     # Load a QA chain
     qa_chain = load_qa_chain(OpenAI(temperature=1), chain_type="stuff")
     qa = RetrievalQA(combine_documents_chain=qa_chain, retriever=vector_db.as_retriever())
-    response_object = qa.run(input_text)
+    query_response = qa.run(input_text)
+    print("query_response =", query_response)
 
     # Extract the answer from the response object
-    query_response = response_object.answer
+    # query_response = response_object.answer
 
     # # Example response object
     # response = {
@@ -171,16 +182,38 @@ session_state = {
 #             session_state['generated'].append(query_response)
 #     return render_template('index.html', generated=session_state['generated'], past=session_state['past'])
 
+# @app.route('/', methods=['GET', 'POST'])
+# def home():
+#     if request.method == 'POST':
+#         user_input = request.form.get('user_input')
+#         if user_input:
+#             query_response = generate_response(user_input)
+#             session_state['past'].append({"role": "user", "content": user_input})
+#             session_state['generated'].append({"role": "bot", "content": query_response})
+#     # return render_template('index.html', messages=session_state['messages'])
+#     return render_template('index.html', generated=session_state['generated'], past=session_state['past'])
+
+
 @app.route('/', methods=['GET', 'POST'])
 def home():
+    print("home route is accessed")
     if request.method == 'POST':
+        print("POST is accessed")
         user_input = request.form.get('user_input')
         if user_input:
             query_response = generate_response(user_input)
+            print("inside IF inside home route............")
             session_state['past'].append({"role": "user", "content": user_input})
             session_state['generated'].append({"role": "bot", "content": query_response})
-    # return render_template('index.html', messages=session_state['messages'])
+    else:
+        print("ELSE is accessed")
+        # Add a default response when the page is loaded initially
+        query_response = generate_response("Hello")
+        session_state['generated'].append({"role": "bot", "content": query_response})
+    
     return render_template('index.html', generated=session_state['generated'], past=session_state['past'])
+
+
 
 # Run the Flask app
 if __name__ == '__main__':
