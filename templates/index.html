@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chatbot App</title>
+</head>
+<body>
+    <h1>Chatbot App</h1>
+    
+    <form method="POST">
+        <textarea name="user_input" rows="5" cols="50"></textarea>
+        <br>
+        <button type="submit">Send</button>
+    </form>
+
+    <!-- <h2>Chat History</h2>
+    <ul>
+        {% for message in messages %}
+            <li>{{ message.role }}: {{ message.content }}</li>
+        {% endfor %}
+    </ul> -->
+
+    <h2>Chat History</h2>
+    <ul>
+        {% for message in generated %}
+            <li>{{ message.role }}: {{ message.content }}</li>
+        {% endfor %}
+        {% for message in past %}
+            <li>{{ message.role }}: {{ message.content }}</li>
+        {% endfor %}
+    </ul>
+
+</body>
+</html>

@@ -34,26 +34,52 @@ from langchain.schema import Document
 # Define the Flask app
 app = Flask(__name__)
 
+# # Get the OpenAI API key from environment variable
+# openai_api_key = os.environ.get("OPENAI_API_KEY")
+
+# # Set the OpenAI API key
+# openai.api_key = openai_api_key
+
 # Get the OpenAI API key from environment variable
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 
-# Set the OpenAI API key
-openai.api_key = openai_api_key
+# Set the OpenAI API key if it exists
+if openai_api_key:
+    openai.api_key = openai_api_key
+else:
+    # Handle the case where the API key is not set
+    raise ValueError("OpenAI API key is not set.")
 
-# Helper function to process PDFs using pdfplumber
+
+# # Helper function to process PDFs using pdfplumber
+# def get_pdf_docs(folder_path):
+#     folder = pathlib.Path(folder_path)
+#     print("Iterating through PDF files")
+
+#     # Iterate over only .pdf files in the folder (including subdirectories)
+#     for pdf_file in folder.glob("**/*.pdf"):
+#         print(pdf_file)
+#         with pdfplumber.open(pdf_file) as pdf:
+#             text = ""
+#             for page in pdf.pages:
+#                 text += page.extract_text()
+#             yield Document(page_content=text, metadata={"source": str(pdf_file.relative_to(folder))})
+
 def get_pdf_docs(folder_path):
     folder = pathlib.Path(folder_path)
     print("Iterating through PDF files")
 
     # Iterate over only .pdf files in the folder (including subdirectories)
     for pdf_file in folder.glob("**/*.pdf"):
-        print(pdf_file)
+        print(f"Processing PDF file: {pdf_file}")
+
         with pdfplumber.open(pdf_file) as pdf:
             text = ""
             for page in pdf.pages:
                 text += page.extract_text()
-            yield Document(page_content=text, metadata={"source": str(pdf_file.relative_to(folder))})
+            print(f"Extracted text from {pdf_file}:\n{text}")
 
+        yield Document(page_content=text, metadata={"source": str(pdf_file.relative_to(folder))})
 
 # Use the Python code text splitter from Langchain to create chunks
 def get_source_chunks(repo_path, pdf_folder_path): 
@@ -101,26 +127,59 @@ def generate_response(input_text):
     # Load a QA chain
     qa_chain = load_qa_chain(OpenAI(temperature=1), chain_type="stuff")
     qa = RetrievalQA(combine_documents_chain=qa_chain, retriever=vector_db.as_retriever())
-    query_response = qa.run(input_text)
+    response_object = qa.run(input_text)
+
+    # Extract the answer from the response object
+    query_response = response_object.answer
+
+    # # Example response object
+    # response = {
+    #     "answer": query_response,  # Store the response text
+    #     "metadata": {
+    #         "source": "source_name"  # Add necessary metadata
+    #     }
+    # }
 
     # Example response object
     response = {
-        "answer": query_response,  # Store the response text
-        "metadata": {
-            "source": "source_name"  # Add necessary metadata
-        }
+        "role": "bot",  # Add the role to identify the sender
+        "content": query_response  # Store the response text
     }
+
+    # Update the session_state with the response message
+    session_state['messages'].append(response)
+
     return response
 
+# Initialise session state variables
+session_state = {
+    'generated': [],
+    'past': [],
+    'messages': [
+        {"role": "system", "content": "You are a helpful assistant."}
+    ]
+}
+
 # Define the home route
+# @app.route('/', methods=['GET', 'POST'])
+# def home():
+#     if request.method == 'POST':
+#         user_input = request.form.get('user_input')
+#         if user_input:
+#             query_response = generate_response(user_input)
+#             session_state['past'].append(user_input)
+#             session_state['generated'].append(query_response)
+#     return render_template('index.html', generated=session_state['generated'], past=session_state['past'])
+
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
         user_input = request.form.get('user_input')
         if user_input:
             query_response = generate_response(user_input)
-            session_state['past'].append(user_input)
-            session_state['generated'].append(query_response)
+            session_state['past'].append({"role": "user", "content": user_input})
+            session_state['generated'].append({"role": "bot", "content": query_response})
+    # return render_template('index.html', messages=session_state['messages'])
     return render_template('index.html', generated=session_state['generated'], past=session_state['past'])
 
 # Run the Flask app
