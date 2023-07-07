@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .chat-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        .chat-header {
+            background-color: #075e54;
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .chatbox {
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 20px;
+        }
+        .user-message {
+            text-align: right;
+        }
+        .user-message .message-content {
+            background-color: #dcf8c6;
+            color: #333;
+            padding: 10px;
+            border-radius: 8px;
+            display: inline-block;
+            max-width: 70%;
+        }
+        .bot-message {
+            text-align: left;
+        }
+        .bot-message .message-content {
+            background-color: #fff;
+            color: #333;
+            padding: 10px;
+            border-radius: 8px;
+            display: inline-block;
+            max-width: 70%;
+        }
+        .input-container {
+            display: flex;
+            margin-top: 20px;
+        }
+        .input-container input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .input-container button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #128c7e;
+            color: #fff;
+            border-radius: 5px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            Chatbot
+        </div>
+        <div class="chatbox" id="chatbox">
+            {% for message in generated %}
+                {% if message.role == "user" %}
+                    <div class="message user-message">
+                        <span class="message-content">{{ message.content }}</span>
+                    </div>
+                {% else %}
+                    <div class="message bot-message">
+                        <span class="message-content">{{ message.content }}</span>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <form id="message-form" method="POST">
+            <div class="input-container">
+                <input type="text" name="user_input" id="user-input" placeholder="Type your message..." autocomplete="off" required>
+                <button type="submit">Send</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Scroll to the bottom of the chatbox
+        var chatbox = document.getElementById("chatbox");
+        chatbox.scrollTop = chatbox.scrollHeight;
+
+        // Submit the form when Enter key is pressed
+        document.getElementById("user-input").addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                document.getElementById("message-form").submit();
+            }
+        });
+    </script>
+</body>
+</html>

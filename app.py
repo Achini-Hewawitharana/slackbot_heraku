@@ -5,20 +5,6 @@ import pathlib
 from flask import Flask, render_template, request
 # from generate_chroma_db import generate_chroma_db
 
-# # Define the required packages
-# required_packages = [
-#     "pdfplumber"
-# ]
-
-# # Check if packages are already installed
-# installed_packages = subprocess.check_output([sys.executable, "-m", "pip", "list"]).decode("utf-8")
-# packages_to_install = [package for package in required_packages if package not in installed_packages]
-
-# # Install required packages if they are not already installed
-# if packages_to_install:
-#     subprocess.check_call([sys.executable, "-m", "pip", "install"] + packages_to_install)
-
-
 import pdfplumber
 import openai
 from langchain.vectorstores import Chroma

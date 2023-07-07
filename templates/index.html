@@ -2,6 +2,29 @@
 <html>
 <head>
     <title>Chatbot App</title>
+    <style>
+        .bot-icon {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: yellow;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .user-icon {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: lightblue;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+
+        .message-container {
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
     <h1>Chatbot App</h1>
@@ -12,22 +35,29 @@
         <button type="submit">Send</button>
     </form>
 
-    <!-- <h2>Chat History</h2>
-    <ul>
-        {% for message in messages %}
-            <li>{{ message.role }}: {{ message.content }}</li>
-        {% endfor %}
-    </ul> -->
-
     <h2>Chat History</h2>
-    <ul>
+    <div>
         {% for message in generated %}
-            <li>{{ message.role }}: {{ message.content }}</li>
+            <div class="message-container">
+                {% if message.role == 'bot' %}
+                    <span class="bot-icon"></span>
+                {% else %}
+                    <span class="user-icon"></span>
+                {% endif %}
+                {{ message.role }}: {{ message.content }}
+            </div>
         {% endfor %}
         {% for message in past %}
-            <li>{{ message.role }}: {{ message.content }}</li>
+            <div class="message-container">
+                {% if message.role == 'bot' %}
+                    <span class="bot-icon"></span>
+                {% else %}
+                    <span class="user-icon"></span>
+                {% endif %}
+                {{ message.role }}: {{ message.content }}
+            </div>
         {% endfor %}
-    </ul>
+    </div>
 
 </body>
 </html>
