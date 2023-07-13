@@ -31,9 +31,6 @@ CHROMA_DB_PATH = os.path.join(REPO_PATH, "chromaDB")
 def generate_response(input_text):
     print("generate_response function is called")
 
-    # REPO_PATH = os.path.abspath(os.path.dirname(__file__))
-    # CHROMA_DB_PATH = os.path.join(REPO_PATH, "chromaDB")
-
     vector_db = None
     existing_filenames = []
 
@@ -42,7 +39,6 @@ def generate_response(input_text):
         # Create a new Chroma DB
         print(f'Creating Chroma DB at {CHROMA_DB_PATH}...')
         source_chunks = get_source_chunks(REPO_PATH, os.path.join(REPO_PATH, "sample_policies"))
-        # Creating embeddings using the OpenAIEmbeddings, will incur costs
         vector_db = Chroma.from_documents(source_chunks, OpenAIEmbeddings(), persist_directory=CHROMA_DB_PATH)
         vector_db.persist()
         existing_filenames = [doc.metadata.get("source") for doc in source_chunks]
@@ -62,27 +58,39 @@ def generate_response(input_text):
                 existing_filenames.append(filename)
 
         if new_documents:
-            print(f"Found {len(new_documents)} new document(s). Recreating Chroma DB...")
-            all_documents = vector_db.indexed_documents + new_documents
-            vector_db = Chroma.from_documents(all_documents, OpenAIEmbeddings(), persist_directory=CHROMA_DB_PATH)
+            print(f"Found {len(new_documents)} new document(s). Updating Chroma DB...")
+
+            retriever = vector_db.as_retriever()
+
+            for doc in new_documents:
+                retriever.add_document(doc)
+
+            vector_db = Chroma.from_retriever(retriever, persist_directory=CHROMA_DB_PATH)
             vector_db.persist()
 
     # Load a QA chain
     qa_chain = load_qa_chain(OpenAI(temperature=1), chain_type="stuff")
     qa = RetrievalQA(combine_documents_chain=qa_chain, retriever=vector_db.as_retriever())
     query_response = qa.run(input_text)
-    # print("query_response =", query_response)
 
-    # Example response object
     response = {
-        "role": "bot",  # Add the role to identify the sender
-        "content": query_response  # Store the response text
+        "role": "bot",
+        "content": query_response
     }
 
-    # Update the session_state with the response message
-    session_state['messages'].append(response)
-
     return response
+
+# Function to get source code chunks from PDF documents
+def get_source_chunks(repo_path, pdf_folder_path):
+    source_chunks = []
+
+    # Create a PythonCodeTextSplitter object for splitting the code
+    splitter = PythonCodeTextSplitter(chunk_size=1024, chunk_overlap=30)
+
+    for pdf in get_pdf_docs(pdf_folder_path):
+        for chunk in splitter.split_text(pdf.page_content):
+            source_chunks.append(Document(page_content=chunk, metadata=pdf.metadata))
+    return source_chunks
 
 # Function to get PDF documents from a folder
 def get_pdf_docs(folder_path):
@@ -99,60 +107,7 @@ def get_pdf_docs(folder_path):
 
         print(f"Extracted text from {pdf_file}:\n{text}")
 
-    yield Document(page_content=text, metadata={"source": str(pdf_file.relative_to(folder))})
-
-###########################################################################################
-# import os
-# import chromaDB
-
-# client = chromaDB.Client()
-
-# def read_files_from_folder(folder_path):
-#     file_data = []
-
-#     for file_name in os.listdir(folder_path):
-#         if file_name.endswith(".pdf"):
-#             with open(os.path.join(folder_path, file_name), 'r') as file:
-#                 content = file.read()
-#                 file_data.append({"file_name": file_name, "content": content})
-
-#     return file_data
-
-# folder_path = "sample_policies"
-# file_data = read_files_from_folder(folder_path)
-
-# documents = []
-# metadatas = []
-# ids = []
-
-# for index, data in enumerate(file_data):
-#     documents.append(data['content'])
-#     metadatas.append({'source': data['file_name']})
-#     ids.append(str(index + 1))
-
-# policy_collection = client.create_collection("policy_collection")
-
-# policy_collection.add(
-#     documents=documents,
-#     metadatas=metadatas,
-#     ids=ids
-# )
-
-
-#################################################################################################
-
-# Function to get source code chunks from PDF documents
-def get_source_chunks(repo_path, pdf_folder_path): 
-    source_chunks = []
-
-    # Create a PythonCodeTextSplitter object for splitting the code
-    splitter = PythonCodeTextSplitter(chunk_size=1024, chunk_overlap=30)
-
-    for pdf in get_pdf_docs(pdf_folder_path):
-        for chunk in splitter.split_text(pdf.page_content):
-            source_chunks.append(Document(page_content=chunk, metadata=pdf.metadata))
-    return source_chunks
-
+        yield Document(page_content=text, metadata={"source": str(pdf_file.relative_to(folder))})
 
 # Initialise session state variable
 session_state = {
@@ -160,6 +115,7 @@ session_state = {
         {"role": "system", "content": "You are a helpful assistant."}
     ]
 }
+
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
@@ -174,7 +130,6 @@ def home():
         session_state['messages'].append({"role": "bot", "content": query_response['content']})
 
     return render_template('index3_2.html', messages=session_state['messages'])
-
 
 # Run the Flask app
 if __name__ == '__main__':

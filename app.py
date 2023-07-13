@@ -20,12 +20,6 @@ from langchain.schema import Document
 # Define the Flask app
 app = Flask(__name__)
 
-# # Get the OpenAI API key from environment variable
-# openai_api_key = os.environ.get("OPENAI_API_KEY")
-
-# # Set the OpenAI API key
-# openai.api_key = openai_api_key
-
 # Get the OpenAI API key from environment variable
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 
@@ -36,21 +30,6 @@ if openai_api_key:
 else:
     # Handle the case where the API key is not set
     raise ValueError("OpenAI API key is not set.")
-
-
-# # Helper function to process PDFs using pdfplumber
-# def get_pdf_docs(folder_path):
-#     folder = pathlib.Path(folder_path)
-#     print("Iterating through PDF files")
-
-#     # Iterate over only .pdf files in the folder (including subdirectories)
-#     for pdf_file in folder.glob("**/*.pdf"):
-#         print(pdf_file)
-#         with pdfplumber.open(pdf_file) as pdf:
-#             text = ""
-#             for page in pdf.pages:
-#                 text += page.extract_text()
-#             yield Document(page_content=text, metadata={"source": str(pdf_file.relative_to(folder))})
 
 
 def get_pdf_docs(folder_path):
@@ -80,10 +59,6 @@ def get_source_chunks(repo_path, pdf_folder_path):
     # Create a PythonCodeTextSplitter object for splitting the code
     splitter = PythonCodeTextSplitter(chunk_size=1024, chunk_overlap=30)
 
-    # for source in get_repo_docs(repo_path):
-    #     for chunk in splitter.split_text(source.page_content):
-    #         source_chunks.append(Document(page_content=chunk, metadata=source.metadata))
-
     for pdf in get_pdf_docs(pdf_folder_path):
         for chunk in splitter.split_text(pdf.page_content):
             source_chunks.append(Document(page_content=chunk, metadata=pdf.metadata))
@@ -101,8 +76,6 @@ def generate_response(input_text):
     print("after CHROMA_DB_PATH inside generate_response")
 
     vector_db = None
-
-    # source_chunks = get_source_chunks(REPO_PATH, os.path.join(REPO_PATH, "sample_policies"))
 
     # Check if Chroma DB exists
     if not os.path.exists(CHROMA_DB_PATH):
@@ -126,17 +99,6 @@ def generate_response(input_text):
     query_response = qa.run(input_text)
     print("query_response =", query_response)
 
-    # Extract the answer from the response object
-    # query_response = response_object.answer
-
-    # # Example response object
-    # response = {
-    #     "answer": query_response,  # Store the response text
-    #     "metadata": {
-    #         "source": "source_name"  # Add necessary metadata
-    #     }
-    # }
-
     # Example response object
     response = {
         "role": "bot",  # Add the role to identify the sender
@@ -157,29 +119,6 @@ session_state = {
     ]
 }
 
-# Define the home route
-# @app.route('/', methods=['GET', 'POST'])
-# def home():
-#     if request.method == 'POST':
-#         user_input = request.form.get('user_input')
-#         if user_input:
-#             query_response = generate_response(user_input)
-#             session_state['past'].append(user_input)
-#             session_state['generated'].append(query_response)
-#     return render_template('index.html', generated=session_state['generated'], past=session_state['past'])
-
-# @app.route('/', methods=['GET', 'POST'])
-# def home():
-#     if request.method == 'POST':
-#         user_input = request.form.get('user_input')
-#         if user_input:
-#             query_response = generate_response(user_input)
-#             session_state['past'].append({"role": "user", "content": user_input})
-#             session_state['generated'].append({"role": "bot", "content": query_response})
-#     # return render_template('index.html', messages=session_state['messages'])
-#     return render_template('index.html', generated=session_state['generated'], past=session_state['past'])
-
-
 @app.route('/', methods=['GET', 'POST'])
 def home():
     print("home route is accessed")
@@ -188,17 +127,55 @@ def home():
         user_input = request.form.get('user_input')
         if user_input:
             query_response = generate_response(user_input)
-            print("inside IF inside home route............")
             session_state['past'].append({"role": "user", "content": user_input})
-            session_state['generated'].append({"role": "bot", "content": query_response})
+            session_state['generated'].append({"role": "bot", "content": query_response['content']})
+            # Update the session_state after generating the bot's response
+            session_state['messages'].append(query_response['content'])  # Update this line
     else:
         print("ELSE is accessed")
         # Add a default response when the page is loaded initially
         query_response = generate_response("Hello")
-        session_state['generated'].append({"role": "bot", "content": query_response})
+        session_state['past'].append({"role": "user", "content": ""})
+        session_state['generated'].append({"role": "bot", "content": query_response['content']})
+        # Update the session_state after generating the default bot's response
+        session_state['messages'].append(query_response['content'])  # Update this line
     
-    return render_template('index.html', generated=session_state['generated'], past=session_state['past'])
+    return render_template('index3_2.html', generated=session_state['generated'], past=session_state['past'])
 
+
+# @app.route('/', methods=['GET', 'POST'])
+# def home():
+#     print("home route is accessed")
+#     if request.method == 'POST':
+#         print("POST is accessed")
+#         user_input = request.form.get('user_input')
+#         if user_input:
+#             query_response = generate_response(user_input)
+#             print("inside IF inside home route............")
+#             # session_state['past'].append({"role": "user", "content": user_input})
+#             # session_state['generated'].append({"role": "bot", "content": query_response})
+#             session_state['past'].append({"role": "user", "content": user_input})
+#             session_state['generated'].append({"role": query_response['role'], "content": query_response['content']})
+#             # Update the session_state after generating the default bot's response
+#             session_state['messages'].append(query_response)
+
+#     else:
+#         print("ELSE is accessed")
+#         # Add a default response when the page is loaded initially
+#         query_response = generate_response("Hello")
+#         session_state['past'].append({"role": "user", "content": ""})
+#         session_state['generated'].append({"role": "bot", "content": query_response['content']})
+#         # Update the session_state after generating the default bot's response
+#         session_state['messages'].append(query_response)
+
+
+#     # else:
+#     #     print("ELSE is accessed")
+#     #     # Add a default response when the page is loaded initially
+#     #     query_response = generate_response("Hello")
+#     #     session_state['generated'].append({"role": "bot", "content": query_response})
+    
+#     return render_template('index.html', generated=session_state['generated'], past=session_state['past'])
 
 
 # Run the Flask app

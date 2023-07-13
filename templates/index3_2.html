@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .chat-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        .chat-header {
+            /* background-color: #03611c; */
+            background-color: #2f0361;
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-family: "Arial", sans-serif;
+            font-weight: bold;
+        }
+        .chatbox {
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 20px;
+        }
+        .user-message {
+            text-align: right;
+        }
+        .user-message .message-content {
+            /* background-color: #dcf8c6; */
+            background-color: #d7c2f0;
+            color: #333;
+            padding: 10px;
+            border-radius: 8px;
+            display: inline-block;
+            max-width: 70%;
+        }
+        .bot-message {
+            text-align: left;
+        }
+        .bot-message .message-content {
+            /* background-color: #eceff1; */
+            background-color: #f1ecf0;
+            color: #333;
+            padding: 10px;
+            border-radius: 8px;
+            display: inline-block;
+            max-width: 70%;
+        }
+        .input-container {
+            display: flex;
+            margin-top: 20px;
+        }
+        .input-container input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .input-container button {
+            padding: 10px 20px;
+            border: none;
+            /* background-color: #4caf50; */
+            background-color: #9761d4;
+            color: #fff;
+            border-radius: 5px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        /* Chat avatar section */
+        
+        .chat-container {
+            position: relative; /* Add position relative to the container */
+        }
+        .bot-avatar {
+            position: absolute;
+            bottom: -45px; /* Adjust the value based on the avatar size */
+            left: 20px; /* Adjust the value based on the avatar size */
+            width: 40px; /* Adjust the width of the avatar */
+            height: 40px; /* Adjust the height of the avatar */
+            border-radius: 50%; /* Adjust the border radius for a circular avatar */
+            background-color: #db4437;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .bot-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            Policy SlackBot
+        </div>
+        <div class="chatbox" id="chatbox">
+            {% for message in messages %}
+                {% if message.role == "user" %}
+                    <div class="message user-message">
+                        <span class="message-content">{{ message.content }}</span>
+                    </div>
+                {% else %}
+                    <div class="message bot-message">
+                        <div class="bot-avatar">
+                            <!-- <img src="{{ url_for('static', filename='chatbot.png') }}" alt="Bot Avatar"> -->
+                            <img src="static/chatbot.png" alt="Bot Avatar">
+                        </div>
+                        
+                        <span class="message-content">{{ message.content }}</span>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <form id="message-form" method="POST">
+            <div class="input-container">
+                <input type="text" name="user_input" id="user-input" placeholder="Type your message..." autocomplete="off" required>
+                <button type="submit">Send</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Scroll to the bottom of the chatbox
+        var chatbox = document.getElementById("chatbox");
+        chatbox.scrollTop = chatbox.scrollHeight;
+
+        // Submit the form when Enter key is pressed
+        document.getElementById("user-input").addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                document.getElementById("message-form").submit();
+            }
+        });
+    </script>
+</body>
+</html>

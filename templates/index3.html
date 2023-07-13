@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        /* CSS styles */
+
+        /* ... */
+
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Chat header -->
+        <div class="chat-header">
+            Chatbot
+        </div>
+
+        <!-- Chat messages -->
+        <div class="chatbox" id="chatbox">
+            {% for message in messages %}
+                <div class="message {% if message.role == 'user' %}user-message{% else %}bot-message{% endif %}">
+                    <span class="message-content">{{ message.content }}</span>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- User input form -->
+        <form id="message-form" method="POST">
+            <div class="input-container">
+                <input type="text" name="user_input" id="user-input" placeholder="Type your message..." autocomplete="off" required>
+                <button type="submit">Send</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Scroll to the bottom of the chatbox
+        var chatbox = document.getElementById("chatbox");
+        chatbox.scrollTop = chatbox.scrollHeight;
+
+        // Submit the form when Enter key is pressed
+        document.getElementById("user-input").addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                document.getElementById("message-form").submit();
+            }
+        });
+    </script>
+</body>
+</html>

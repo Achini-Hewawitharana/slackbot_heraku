@@ -112,19 +112,42 @@ def get_common_knowledge_response(input_text):
         return "There's no proper answer."
 
 
+# @app.route('/', methods=['GET', 'POST'])
+# def home():
+#     if request.method == 'POST':
+#         user_input = request.form.get('user_input')
+#         if user_input:
+#             query_response = generate_response(user_input)
+#             session_state['past'].append({"role": "user", "content": user_input})
+#             session_state['generated'].append({"role": "bot", "content": query_response})
+#     else:
+#         # Add a default response when the page is loaded initially
+#         query_response = generate_response("Hello")
+#         session_state['generated'].append({"role": "bot", "content": query_response})
+
+#     return render_template('index2.html', generated=session_state['generated'], past=session_state['past'])
+
 @app.route('/', methods=['GET', 'POST'])
 def home():
+    print("home route is accessed")
     if request.method == 'POST':
+        print("POST is accessed")
         user_input = request.form.get('user_input')
         if user_input:
             query_response = generate_response(user_input)
             session_state['past'].append({"role": "user", "content": user_input})
-            session_state['generated'].append({"role": "bot", "content": query_response})
+            session_state['generated'].append({"role": "bot", "content": query_response['content']})
+            # Update the session_state after generating the bot's response
+            session_state['messages'].append(query_response['content'])  # Update this line
     else:
+        print("ELSE is accessed")
         # Add a default response when the page is loaded initially
         query_response = generate_response("Hello")
-        session_state['generated'].append({"role": "bot", "content": query_response})
-
+        session_state['past'].append({"role": "user", "content": ""})
+        session_state['generated'].append({"role": "bot", "content": query_response['content']})
+        # Update the session_state after generating the default bot's response
+        session_state['messages'].append(query_response['content'])  # Update this line
+    
     return render_template('index2.html', generated=session_state['generated'], past=session_state['past'])
 
 
