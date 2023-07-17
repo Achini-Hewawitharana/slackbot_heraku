@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Chatbot</title>
+    <style>
+        .chat-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .user-icon, .bot-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ccc;
+            margin-right: 10px;
+        }
+
+        .user-message {
+            background-color: #f1f1f1;
+        }
+
+        .bot-message {
+            background-color: #e2f3ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        {% for message in messages %}
+            <div class="message {% if message.role == 'user' %}user-message{% else %}bot-message{% endif %}">
+                <div class="{% if message.role == 'user' %}user-icon{% else %}bot-icon{% endif %}"></div>
+                <div>{{ message.content }}</div>
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
